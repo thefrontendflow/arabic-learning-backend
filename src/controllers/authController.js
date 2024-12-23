@@ -1,5 +1,6 @@
 import { User } from "../models/User.js";
 import crypto from "crypto";
+import { sendEmail } from "../utils/emailService.js";
 
 export const registerUser = async (req, res) => {
   try {
@@ -26,6 +27,7 @@ export const registerUser = async (req, res) => {
     });
 
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
+    
     await sendEmail({
       to: email,
       subject: "Verify Your Email",
