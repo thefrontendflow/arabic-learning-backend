@@ -1,5 +1,6 @@
 import { User } from "../models/User.js";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import { sendEmail } from "../utils/emailService.js";
 
 export const registerUser = async (req, res) => {
@@ -63,6 +64,46 @@ export const verifyEmail = async (req, res) => {
     await user.save();
 
     res.status(200).json({ success: true, message: "Email verified successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Login Controller
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: "Invalid email or password" });
+
+    // Check if the email is verified
+    if (!user.isVerified) {
+      return res.status(403).json({ error: "Email not verified. Please verify your email first." });
+    }
+
+    // Compare password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) return res.status(400).json({ error: "Invalid email or password" });
+
+    // Generate JWT
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+      expiresIn: "1h", // Token valid in 1 hr
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
