@@ -143,3 +143,31 @@ export const resendVerificationEmail = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const forgetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user)
+      return res.status(404).json({
+        message:
+          "If your email address exists in our database, you will receive a password recovery link at your email address in a few minutes!",
+      });
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    await sendEmail({
+      to: email,
+      subject: "Password Reset",
+      text: `Click here to reset: ${resetUrl}`
+    });
+
+    res.status(200).json({ message: "Password reset link sent!" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
