@@ -56,12 +56,9 @@ export const verifyEmail = async (req, res) => {
       return res.status(400).json({ error: "Invalid or expired token" });
 
     if (user.emailVerificationExpires < Date.now()) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Verification token has expired. Please request for new link!.",
-        });
+      return res.status(400).json({
+        error: "Verification token has expired. Please request for new link!.",
+      });
     }
 
     user.isVerified = true;
@@ -97,7 +94,7 @@ export const loginUser = async (req, res) => {
     // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
-      return res.status(400).json({ error: "...Invalid email or password" });
+      return res.status(400).json({ error: "Invalid email or password" });
 
     // Generate JWT
     const token = jwt.sign(
@@ -153,12 +150,10 @@ export const resendVerificationEmail = async (req, res) => {
       text: `Please verify your email by clicking this link: ${verificationUrl}`,
     });
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Verification email resent successfully.",
-      });
+    res.status(200).json({
+      success: true,
+      message: "Verification email resent successfully.",
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -214,5 +209,56 @@ export const resetPassword = async (req, res) => {
     res.status(200).json({ message: "Password reset successfully!" });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    // Validate inputs
+    if (!oldPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Old password and New password are required." });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+    // Check if the old password is correct
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch)
+      return res.status(400).json({ message: "Incorrect old password!" });
+
+    // Check if the old password is same as new password
+    if (oldPassword === newPassword) {
+      return res
+        .status(400)
+        .json({ message: "You can't use the old password!" });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({ message: "Password successfully changed!" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const checkAuthentication = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+    res.status(200).json({
+      message: "User is authenticated",
+      user: { ...user._doc, password: undefined }, // The user info decoded from the JWT token in the middleware
+    });
+  } catch (error) {
+    console.log("Error in checkAuth", error);
+    res.status(500).json({ message: error.message });
   }
 };
