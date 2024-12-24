@@ -108,3 +108,38 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
+// Resend email link for verification
+export const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Check if the user exists
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: "User not found!" });
+
+    // Check if the user is already verified
+    if (user.isVerified) {
+      return res.status(400).json({ error: "Email is already verified!" });
+    }
+
+    // Generate a new verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    user.verificationToken = verificationToken;
+    user.emailVerificationExpires = Date.now() + 1 * 60 * 60 * 1000; // 1 hour
+    await user.save();
+
+    // Send the verification email
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
+    await sendEmail({
+      to: email,
+      subject: "Email Verification",
+      text: `Please verify your email by clicking this link: ${verificationUrl}`,
+    });
+
+    res.status(200).json({ success: true, message: "Verification email resent successfully." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
