@@ -1,8 +1,11 @@
 import authRoutes from './routes/authRoutes.js'
+import availabilityRoutes from "./routes/availabilityRoutes.js"
+import bookingRoutes from './routes/bookingRoutes.js';
 import { connectDB } from "./config/db.js";
 import cors from 'cors';
 import dotenv from "dotenv";
 import express from 'express';
+import userRoutes from './routes/userRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -14,6 +17,9 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/availability", availabilityRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -35,4 +41,3 @@ app.listen(PORT, async () => {
   await connectDB();
   console.log(`Server running on port ${PORT}`);
 });
-
