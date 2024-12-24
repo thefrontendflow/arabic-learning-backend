@@ -3,6 +3,7 @@ import {
   loginUser,
   registerUser,
   resendVerificationEmail,
+  resetPassword,
   verifyEmail,
 } from "../controllers/authController.js";
 
@@ -15,5 +16,6 @@ router.get("/verify-email", verifyEmail);
 router.post("/login", loginUser);
 router.post("/resend-email-verification-link", resendVerificationEmail);
 router.post("/forget-password", forgetPassword);
+router.post("/reset-password/:token", resetPassword);
 
 export default router;
