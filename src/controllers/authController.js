@@ -344,31 +344,6 @@ export const verify2FA = async (req, res) => {
   }
 };
 
-export const authenticate2FA = async (req, res) => {
-  try {
-    const { code } = req.body;
-    const user = await User.findById(req.user.id);
-
-    if (!user || !user.isTwoFactorEnabled || !user.twoFactorCode) {
-      return res.status(400).json({ error: "2FA not enabled or code not found" });
-    }
-
-    // Verify the code
-    if (user.twoFactorCode !== code || user.twoFactorExpires < Date.now()) {
-      return res.status(400).json({ error: "Invalid or expired code" });
-    }
-
-    // Clear the code after successful authentication
-    user.twoFactorCode = undefined;
-    user.twoFactorExpires = undefined;
-    await user.save();
-
-    res.status(200).json({ success: true, message: "2FA authentication successful" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
 export const disable2FA = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
